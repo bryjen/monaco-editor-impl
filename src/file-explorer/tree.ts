@@ -1,12 +1,12 @@
-import path from 'path'
+import { parsePath } from '../utils/path'
 
 export function filePathsToTree(filePaths: string[]) {
     let tree = new Tree();
     tree.root = new TreeNode(".", [], null, true);
 
     filePaths
-        .map((rawPath: string) => path.parse(rawPath))
-        .forEach((filePath: path.ParsedPath) => {
+        .map((rawPath: string) => parsePath(rawPath))
+        .forEach((filePath: { dir: string; base: string; ext: string }) => {
             const pathArr = filePath.dir.split('/').filter(part => part !== '');
             pathArr.push(filePath.base);
             tree.addPath(pathArr, !filePath.ext); // true if directory (no extension)
@@ -16,12 +16,19 @@ export function filePathsToTree(filePaths: string[]) {
     return tree;
 }
 
+
 // for debugging only
+
 export function printTree(node: TreeNode, indent: string = ""): void {
     console.log(`${indent}${node.value}${node.isDirectory ? '/' : ''}`);
     node.children.forEach(child => printTree(child, indent + "  "));
 }
 
+export function treeToString(node: TreeNode, indent: string = ""): string {
+    const line = `${indent}${node.value}${node.isDirectory ? '/' : ''}`
+    const lines = node.children.map(child => treeToString(child, indent + "   ")).join("\n")
+    return line + "\n" + lines
+}
 
 export class TreeNode {
     value: string = "";
@@ -47,7 +54,6 @@ export class Tree {
     private notifyChange(): void {
         this.listeners.forEach(listener => listener(this.root));
     }
-
 
     onChange(listener: TreeChangeListener): () => void {
         this.listeners.push(listener);

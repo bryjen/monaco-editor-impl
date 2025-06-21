@@ -5,7 +5,7 @@ import { customElement, property } from "lit/decorators.js";
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.main.js'; 
 // @ts-ignore
 import { initVimMode } from 'monaco-vim';
-
+import type { CodeEditorController, File } from "./controller";
 
 // for intellisense
 declare global {
@@ -35,19 +35,25 @@ self.MonacoEnvironment = {
 	}
 };
 
-
 @customElement("monaco-editor")
 export class Editor extends LitElement {
 
-    @property()
-    contents: string = '';
+    // @ts-ignore
+    @property({attribute: false})
+    controller!: CodeEditorController;
 
-    @property()
-    language: 'cpp' | 'java' | 'csharp' = 'cpp';
+    private _initialized = false;
+    private _editor!: monaco.editor.IStandaloneCodeEditor;
 
-    // here, we disable the shadow DOM>
-    // monaco relies heavily on it and it could cause problems down the line if we work around the 
-    // shadow DOM instead.
+    protected override willUpdate(changedProperties: PropertyValues) {
+        if (changedProperties.has('controller') && this.controller && !this._initialized) {
+            this.controller.addHost(this);
+            this._initialized = true;
+        }
+    }
+
+
+    // we disable the shadow DOM for monaco
     protected override createRenderRoot() {
         return this;
     }
@@ -55,27 +61,24 @@ export class Editor extends LitElement {
     protected override render(): TemplateResult {
         return html`
             <style>
-                #monaco-editor {
-                    flex-grow: 1;
+                #monaco-editor-container {
+                    height: 100%;
                     background: var(--editor-bg, white);
                 }
             </style>
-            <div id="monaco-editor"></div>
+            <div id="monaco-editor-container"></div>
         `
     }
 
     protected override firstUpdated(_changedProperties: PropertyValues): void {
-        const editor: monaco.editor.IStandaloneCodeEditor = monaco.editor.create(document.getElementById('monaco-editor'), {
-            value: [
-                '#include <iostream>', 
-                '#include <vector>',
-                '', 
-                'int main() {', 
-                '    std::cout << "Hello, world!" << std::endl;',
-                '    return 0;', 
-                '}'
-            ].join('\n'),
+        const { files, currentFileHash } = this.controller.getOpenFiles();
+        const currentFile = currentFileHash ? files.find(file => file.hash() === currentFileHash) : null;
+        const value = currentFile?.contents ?? '';
+
+        this._editor = monaco.editor.create(this.querySelector('#monaco-editor-container'), {
+            value: value,
             language: 'cpp',
+            theme: 'vs-dark',
             automaticLayout: true,
             suggestOnTriggerCharacters: true,
             minimap: {
@@ -92,7 +95,7 @@ export class Editor extends LitElement {
             }
         });
 
-        editor.onKeyDown((e: monaco.IKeyboardEvent) => {
+        this._editor.onKeyDown((e: monaco.IKeyboardEvent) => {
             // console.log('Key pressed:', e.keyCode, e.code);
             if (e.ctrlKey && e.keyCode === monaco.KeyCode.Enter) {
                 e.preventDefault();
@@ -100,6 +103,6 @@ export class Editor extends LitElement {
             }
         });
 
-        const vimMode = initVimMode(editor, document.getElementById('vim-status'));
+        const vimMode = initVimMode(this._editor, document.getElementById('vim-status'));
     }
 }

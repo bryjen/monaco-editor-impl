@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "build": "bun ./build.ts",
+    "build:watch": "bun ./build.ts --watch",
     "trun": "bun ./test-runner.ts"
   },
   "devDependencies": {
@@ -14,7 +15,9 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "chokidar": "^4.0.3",
     "lit": "^3.3.0",
+    "lucide": "^0.522.0",
     "monaco-editor": "^0.52.2",
     "monaco-vim": "^0.4.2"
   }

@@ -1,7 +1,42 @@
 import { html, LitElement, type TemplateResult } from "lit";
 import { customElement, state } from "lit/decorators.js";
+import { CodeEditorController, File } from "./controller";
 
+
+@customElement("code-workspace")
 export class CodeWorkspace extends LitElement {
+
+    private _controller: CodeEditorController;
+
+    constructor() {
+        super()
+
+        const file1 = new File("src/main.cpp", `#include <iostream>
+#include <vector>
+
+int main() {
+    std::cout << "Hello, world!" << std::endl;
+    return 0;
+}
+`)
+
+        const file2 = new File("include/lib.hpp", `#ifndef _LIB_HPP_
+#define _LIB_HPP_
+
+namespace {
+    int add(int, int);
+}
+
+#endif  // _LIB_HPP_
+`)
+
+        this._controller = new CodeEditorController(
+            [ file1, file2 ], 
+            file2,
+            true)
+    }
+
+    // we disable the shadow DOM for monaco (propagated, else monaco will partially break)
     protected override createRenderRoot() {
         return this;
     }
@@ -28,22 +63,23 @@ export class CodeWorkspace extends LitElement {
                 }
             </style>
             <div id="editor-container">
-                <div id="explorer-container">
-                    <p>File Container</p>
-                </div>
+                <!-- @ts-ignore -->
+                <file-explorer .controller=${this._controller}>
+                </file-explorer>
 
                 <div id="inside-editor-container">
+                    <!-- @ts-ignore -->
+                    <editor-toolbar .controller=${this._controller}>
+                    </editor-toolbar>
+
+                    <!-- @ts-ignore -->
+                    <monaco-editor .controller=${this._controller} style="flex-grow: 1">
+                    </monaco-editor>
+
                     <div>
                         <p>
-                            HEADER
+                            FOOTER
                         </p>
-                    </div>
-
-                    <!-- custom code editor -->
-                    <monaco-editor></monaco-editor>
-
-                    <div>
-                        FOOTER
                     </div>
                 </div>
             </div>

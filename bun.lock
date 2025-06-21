@@ -4,7 +4,9 @@
     "": {
       "name": "monaco-lit",
       "dependencies": {
+        "chokidar": "^4.0.3",
         "lit": "^3.3.0",
+        "lucide": "^0.522.0",
         "monaco-editor": "^0.52.2",
         "monaco-vim": "^0.4.2",
       },
@@ -29,15 +31,21 @@
 
     "bun-types": ["bun-types@1.2.16", "", { "dependencies": { "@types/node": "*" } }, "sha512-ciXLrHV4PXax9vHvUrkvun9VPVGOVwbbbBF/Ev1cXz12lyEZMoJpIJABOfPcN9gDJRaiKF9MVbSygLg4NXu3/A=="],
 
+    "chokidar": ["chokidar@4.0.3", "", { "dependencies": { "readdirp": "^4.0.1" } }, "sha512-Qgzu8kfBvo+cA4962jnP1KkS6Dop5NS6g7R5LFYJr4b8Ub94PPQXUksCw9PvXoeXPRRddRNC5C1JQUR2SMGtnA=="],
+
     "lit": ["lit@3.3.0", "", { "dependencies": { "@lit/reactive-element": "^2.1.0", "lit-element": "^4.2.0", "lit-html": "^3.3.0" } }, "sha512-DGVsqsOIHBww2DqnuZzW7QsuCdahp50ojuDaBPC7jUDRpYoH0z7kHBBYZewRzer75FwtrkmkKk7iOAwSaWdBmw=="],
 
     "lit-element": ["lit-element@4.2.0", "", { "dependencies": { "@lit-labs/ssr-dom-shim": "^1.2.0", "@lit/reactive-element": "^2.1.0", "lit-html": "^3.3.0" } }, "sha512-MGrXJVAI5x+Bfth/pU9Kst1iWID6GHDLEzFEnyULB/sFiRLgkd8NPK/PeeXxktA3T6EIIaq8U3KcbTU5XFcP2Q=="],
 
     "lit-html": ["lit-html@3.3.0", "", { "dependencies": { "@types/trusted-types": "^2.0.2" } }, "sha512-RHoswrFAxY2d8Cf2mm4OZ1DgzCoBKUKSPvA1fhtSELxUERq2aQQ2h05pO9j81gS1o7RIRJ+CePLogfyahwmynw=="],
 
+    "lucide": ["lucide@0.522.0", "", {}, "sha512-85Xqzt9tTP2QCgkjKWvCTPi3M9HjQvqRkLADmQTJuH3cOIjBLujGfDN4f0jm/qIFGCC51iRoFuwJ6wDh/9t3Iw=="],
+
     "monaco-editor": ["monaco-editor@0.52.2", "", {}, "sha512-GEQWEZmfkOGLdd3XK8ryrfWz3AIP8YymVXiPHEdewrUq7mh0qrKrfHLNCXcbB6sTnMLnOZ3ztSiKcciFUkIJwQ=="],
 
     "monaco-vim": ["monaco-vim@0.4.2", "", { "peerDependencies": { "monaco-editor": "*" } }, "sha512-rdbQC3O2rmpwX2Orzig/6gZjZfH7q7TIeB+uEl49sa+QyNm3jCKJOw5mwxBdFzTqbrPD+URfg6A2lEkuL5kymw=="],
+
+    "readdirp": ["readdirp@4.1.2", "", {}, "sha512-GDhwkLfywWL2s6vEjyhri+eXmfH6j1L7JE27WhqLeYzoh/A3DBaYGEj2H/HFZCn/kMfim73FXxEJTw06WtxQwg=="],
 
     "typescript": ["typescript@5.8.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-p1diW6TqL9L07nNxvRMM7hMMw4c5XOo/1ibL4aAIGmSAt9slTE1Xgw5KWuof2uTOvCg9BY7ZRi+GaF+7sfgPeQ=="],
 

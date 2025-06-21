@@ -1,5 +1,6 @@
 export * from './code-workspace'
 export * from './controller'
 export * from './monaco-editor'
+export * from './toolbar'
 export * from './file-explorer/file-explorer'
 export * from './file-explorer/tree'
