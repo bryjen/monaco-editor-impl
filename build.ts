@@ -1,8 +1,7 @@
 import esbuild from 'esbuild';
 import path from 'path';
 import fs from 'fs';
-
-console.log("Started build ...")
+import { platform } from 'os';
 
 const workerEntryPoints: string[] = [
 	'language/json/json.worker.js',
@@ -21,6 +20,20 @@ build({ entryPoints: workerEntryPoints.map((entry) => `./node_modules/monaco-edi
 
 build({
 	entryPoints: ['index.ts'],
+	bundle: true,
+	format: 'iife',
+	outdir: path.join(__dirname, 'out'),
+	loader: {
+		'.ttf': 'file'
+	}
+});
+
+build({
+	entryPoints: [
+		'src/index.ts'
+	],
+	platform: 'browser',
+	external: ['path', 'fs', 'os'],
 	bundle: true,
 	format: 'iife',
 	outdir: path.join(__dirname, 'out'),

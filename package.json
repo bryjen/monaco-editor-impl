@@ -4,7 +4,8 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "bun ./build.ts"
+    "build": "bun ./build.ts",
+    "trun": "bun ./test-runner.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"

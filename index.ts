@@ -1,5 +1,6 @@
 // @ts-ignore
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.main.js'; 
+// @ts-ignore
 import { initVimMode } from 'monaco-vim';
 
 declare global {
