@@ -1,5 +1,6 @@
 import type { ReactiveController, ReactiveControllerHost } from "lit";
 import { filePathsToTree, type Tree } from "./file-explorer/tree";
+import { parsePath } from "./utils/path";
 
 // lit reactive controller: https://lit.dev/docs/composition/controllers/
 // stores code editor state globally (via singleton implementation).
@@ -14,7 +15,9 @@ export class File {
     }
 
     getExtension(): string {
-        return "";
+        const path = parsePath(this.path);
+        const ext = path.ext;
+        return ext.startsWith('.') ? ext.substring(1) : ext;
     }
 
     hash(): string {

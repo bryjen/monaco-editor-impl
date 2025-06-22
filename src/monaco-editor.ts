@@ -35,6 +35,21 @@ self.MonacoEnvironment = {
 	}
 };
 
+/**
+ * Gets the appropriate monaco editor language string based on the file extension.
+ */
+function getLanguageFromFileExtension(ext: string) {
+    const map = new Map<string, string>([
+        // c
+        ['c', 'c'],
+        ['h', 'c'],
+        // c++
+        ['cpp', 'cpp'],
+        ['hpp', 'cpp'],
+    ]);
+    return map.get(ext) ?? 'plaintext';
+}
+
 @customElement("monaco-editor")
 export class Editor extends LitElement {
 
@@ -44,6 +59,8 @@ export class Editor extends LitElement {
 
     private _initialized = false;
     private _editor!: monaco.editor.IStandaloneCodeEditor;
+    private _models = new Map<string, monaco.editor.ITextModel>();
+
 
     protected override willUpdate(changedProperties: PropertyValues) {
         if (changedProperties.has('controller') && this.controller && !this._initialized) {
@@ -71,13 +88,10 @@ export class Editor extends LitElement {
     }
 
     protected override firstUpdated(_changedProperties: PropertyValues): void {
-        const { files, currentFileHash } = this.controller.getOpenFiles();
-        const currentFile = currentFileHash ? files.find(file => file.hash() === currentFileHash) : null;
-        const value = currentFile?.contents ?? '';
-
+        // initialize editor
         this._editor = monaco.editor.create(this.querySelector('#monaco-editor-container'), {
-            value: value,
-            language: 'cpp',
+            value: '',
+            language: 'plaintext',
             theme: 'vs-dark',
             automaticLayout: true,
             suggestOnTriggerCharacters: true,
@@ -95,6 +109,22 @@ export class Editor extends LitElement {
             }
         });
 
+        // initialize editor contents
+        // deferred so we can use monaco's editor models to store content state
+        const { files, currentFileHash } = this.controller.getOpenFiles();
+        const currentFile = currentFileHash ? files.find(file => file.hash() === currentFileHash) : undefined;
+        const value = currentFile?.contents ?? '';
+        const language = getLanguageFromFileExtension(currentFile?.getExtension() ?? '');
+
+        if (currentFile) {
+            let model = this._models.get(currentFile.hash());
+            if (!model) {
+                model = monaco.editor.createModel(value, language);
+                this._models.set(currentFile.hash(), model);
+                this._editor.setModel(model);
+            }
+        }
+
         this._editor.onKeyDown((e: monaco.IKeyboardEvent) => {
             // console.log('Key pressed:', e.keyCode, e.code);
             if (e.ctrlKey && e.keyCode === monaco.KeyCode.Enter) {
@@ -104,5 +134,30 @@ export class Editor extends LitElement {
         });
 
         const vimMode = initVimMode(this._editor, document.getElementById('vim-status'));
+    }
+
+    protected override update(changedProperties: PropertyValues) {
+        super.update(changedProperties);
+        
+        // This runs on every reactive update cycle
+        if (this._editor && this.controller) {
+            const { files, currentFileHash } = this.controller.getOpenFiles();
+            const currentFile = currentFileHash ? files.find(file => file.hash() === currentFileHash) : null;
+            const language = getLanguageFromFileExtension(currentFile?.getExtension() ?? '');
+            
+            if (currentFile) {
+                let model = this._models.get(currentFile.hash());
+
+                if (!model) {
+                    model = monaco.editor.createModel(currentFile.contents, language);
+                    this._models.set(currentFile.hash(), model);
+                }
+                
+                // Only switch if it's a different model
+                if (this._editor.getModel() !== model) {
+                    this._editor.setModel(model);
+                }
+            }
+        }
     }
 }

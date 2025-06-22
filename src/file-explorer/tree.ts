@@ -20,7 +20,7 @@ export function filePathsToTree(filePaths: string[]) {
 // for debugging only
 
 export function printTree(node: TreeNode, indent: string = ""): void {
-    console.log(`${indent}${node.value}${node.isDirectory ? '/' : ''}`);
+    // console.log(`${indent}${node.value}${node.isDirectory ? '/' : ''}`);
     node.children.forEach(child => printTree(child, indent + "  "));
 }
 
