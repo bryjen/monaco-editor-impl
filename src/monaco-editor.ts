@@ -93,7 +93,7 @@ export class Editor extends LitElement {
             value: '',
             language: 'plaintext',
             theme: 'vs-dark',
-            automaticLayout: true,
+            // automaticLayout: true,
             suggestOnTriggerCharacters: true,
             minimap: {
                 enabled: false
@@ -124,6 +124,13 @@ export class Editor extends LitElement {
                 this._editor.setModel(model);
             }
         }
+
+
+        setInterval(() => {
+            if (this._editor) {
+                this._editor.layout();
+            }
+        }, 100);
 
         this._editor.onKeyDown((e: monaco.IKeyboardEvent) => {
             // console.log('Key pressed:', e.keyCode, e.code);
@@ -159,5 +166,9 @@ export class Editor extends LitElement {
                 }
             }
         }
+
+        requestAnimationFrame(() => {
+            this._editor.layout();
+        });
     }
 }

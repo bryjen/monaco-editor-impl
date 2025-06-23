@@ -9,3 +9,7 @@ export function parsePath(filePath: string): { dir: string; base: string; ext: s
     
     return { dir, base, ext };
 }
+
+export function normalizePath(path: string): string {
+    return path.replace(/^(\.\/)+/, '');
+}

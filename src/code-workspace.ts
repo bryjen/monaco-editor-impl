@@ -11,7 +11,7 @@ export class CodeWorkspace extends LitElement {
     constructor() {
         super()
 
-        const file1 = new File("src/main.cpp", `#include <iostream>
+        const file1 = new File("./src/main.cpp", `#include <iostream>
 #include <vector>
 
 int main() {
@@ -20,7 +20,7 @@ int main() {
 }
 `)
 
-        const file2 = new File("include/lib.hpp", `#ifndef _LIB_HPP_
+        const file2 = new File("./include/lib.hpp", `#ifndef _LIB_HPP_
 #define _LIB_HPP_
 
 namespace {
@@ -51,12 +51,12 @@ namespace {
 
                     display: flex;
                     flex-direction: row;
+
+                    contain: layout;
                 }
 
                 #inside-editor-container {
-                    width: 100%;
-                    height: 100%;
-
+                    flex: 1;
                     display: flex;
                     flex-direction: column;
                     justify-content: space-between;
@@ -64,8 +64,8 @@ namespace {
             </style>
             <div id="editor-container">
                 <!-- @ts-ignore -->
-                <file-explorer .controller=${this._controller}>
-                </file-explorer>
+                <shoelace-file-explorer .controller=${this._controller}>
+                </shoelace-file-explorer>
 
                 <div id="inside-editor-container">
                     <!-- @ts-ignore -->
@@ -73,7 +73,7 @@ namespace {
                     </editor-toolbar>
 
                     <!-- @ts-ignore -->
-                    <monaco-editor .controller=${this._controller} style="flex-grow: 1">
+                    <monaco-editor .controller=${this._controller} style="flex: 1">
                     </monaco-editor>
 
                     <div>

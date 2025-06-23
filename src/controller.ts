@@ -1,6 +1,6 @@
 import type { ReactiveController, ReactiveControllerHost } from "lit";
 import { filePathsToTree, type Tree } from "./file-explorer/tree";
-import { parsePath } from "./utils/path";
+import { normalizePath, parsePath } from "./utils/path";
 
 // lit reactive controller: https://lit.dev/docs/composition/controllers/
 // stores code editor state globally (via singleton implementation).
@@ -10,7 +10,7 @@ export class File {
     contents: string = ""
 
     constructor(path: string, contents: string) {
-        this.path = path;
+        this.path = normalizePath(path);
         this.contents = contents;
     }
 
@@ -34,6 +34,8 @@ export class CodeEditorController implements ReactiveController {
     private _files: Map<string, File> = new Map([]);
     private _openFiles: string[] = [];
     private _currentFile: string | null = null;
+
+    private _explorerVisible: boolean = true;
 
 
     constructor(
@@ -77,6 +79,19 @@ export class CodeEditorController implements ReactiveController {
 
     // File stuff:
 
+    getExplorerVisibility() {
+        return this._explorerVisible;
+    }
+
+    toggleExplorer() {
+        this._explorerVisible = !this._explorerVisible;
+        this.notifyAll();
+    }
+
+    /**
+     * Returns the state of what files are currently open, and what file the is currently being viewed.
+     * Specifically useful for the editor itself.
+     */
     getOpenFiles() : { files: File[], currentFileHash: string | null } {
         const keys = this._files.keys().filter(hash => this._openFiles.includes(hash))
         const openFiles = keys
@@ -90,7 +105,34 @@ export class CodeEditorController implements ReactiveController {
         };
     }
 
+    /**
+     * Sets the current file via a path.
+     * Useful for when a consumer doesn't have file objects but file paths instead (file paths contain hashes)
+     */
+    setCurrentFileViaPath(filePath: string) {
+        const file = this._files.values().find(file => file.path === filePath) ?? null;
+        if (!file) {
+            return;
+        }
+
+        const isOpen = this._openFiles.find(hash => hash === file.hash());
+        if (!isOpen) {
+            this._openFiles.push(file.hash())
+        }
+
+        this._currentFile = file.hash();
+        this.notifyAll();
+    }
+
+    /**
+     * Sets the current file via a file hash.
+     */
     setCurrentFile(fileHash: string) {
+        const isOpen = this._openFiles.find(hash => hash === fileHash);
+        if (!isOpen) {
+            this._openFiles.push(fileHash)
+        }
+
         this._currentFile = fileHash;
         this.notifyAll();
     }

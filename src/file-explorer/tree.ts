@@ -1,4 +1,4 @@
-import { parsePath } from '../utils/path'
+import { normalizePath, parsePath } from '../utils/path'
 
 export function filePathsToTree(filePaths: string[]) {
     let tree = new Tree();
@@ -41,6 +41,16 @@ export class TreeNode {
         this.children = children;
         this.parent = parent;
         this.isDirectory = isDirectory;
+    }
+
+    getFullPathNormalized() {
+        let currentNode: TreeNode = this;
+        let path: string[] = [ currentNode.value ]
+        while (currentNode.parent) {
+            currentNode = currentNode.parent
+            path.push(currentNode.value)
+        }
+        return normalizePath(path.reverse().join('/'))
     }
 }
 

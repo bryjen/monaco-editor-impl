@@ -19,6 +19,14 @@ async function buildProject() {
 	cpSync('./index.html', './out/index.html');  // copy index.html
 
 
+	// copy shoelace assets to output
+	cpSync(
+		'node_modules/@shoelace-style/shoelace/dist/', 
+		'out/shoelace/', 
+		{ recursive: true }
+	);
+
+
 	async function build(opts: esbuild.BuildOptions) {
 		await esbuild.build(opts).then((result) => {
 			if (result.errors.length > 0) {

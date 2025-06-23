@@ -1,9 +1,15 @@
-import { html, LitElement } from "lit";
+import { html, LitElement, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { repeat } from "lit/directives/repeat.js";
 
 import { type TreeNode } from "./tree";
 import { CodeEditorController } from "../controller";
+
+import { ChevronRight, ChevronDown } from 'lucide';
+import { createIcon, createIconWithDim } from '../utils/lucide.ts'
+import { parsePath } from "../utils/path.ts";
+import { getDirectoryIcon, getFileIcon } from "../utils/iconify.ts";
 
 @customElement("file-explorer")
 export class FileExplorer extends LitElement {
@@ -16,8 +22,17 @@ export class FileExplorer extends LitElement {
     @state()
     private selectedNode: TreeNode | null = null;
 
+    private _initialized = false;
+
     protected override createRenderRoot() {
         return this;
+    }
+
+    protected override willUpdate(changedProperties: PropertyValues) {
+        if (changedProperties.has('controller') && this.controller && !this._initialized) {
+            this.controller.addHost(this);
+            this._initialized = true;
+        }
     }
 
     override connectedCallback() {
@@ -81,41 +96,52 @@ export class FileExplorer extends LitElement {
             ? (state.isExpanded ? 'expanded' : 'collapsed') 
             : 'empty';
         
-        const iconSymbol = state.hasChildren 
-            ? (state.isExpanded ? '▼' : '▶') 
-            : '';
+        const iconSvg = state.hasChildren 
+            ? (state.isExpanded ? createIcon(ChevronDown) : createIcon(ChevronRight))
+            : ``;
 
         return html`
-            <span 
-                class="expand-icon ${iconClass}"
-                @click=${(e: Event) => {
-                    e.stopPropagation();
-                    if (state.hasChildren) this.toggleExpanded(node);
-                }}
-            >
-                ${iconSymbol}
+            <span class="expand-icon ${iconClass}">
+                ${iconSvg}
             </span>
         `;
     }
 
-    private renderNodeIcon(node: TreeNode) {
-        return node.isDirectory 
-            ? html`<span class="folder-icon">📁</span>`
-            : html`<span class="file-icon">📄</span>`;
+    private renderNodeIcon(node: TreeNode, state: ReturnType<typeof this.getNodeState>) {
+        if (node.isDirectory) {
+            const isOpen = state.hasChildren && state.isExpanded;
+            return unsafeHTML(getDirectoryIcon(node.value, isOpen));
+        } else {
+            const fileName = parsePath(node.value).base;
+            return unsafeHTML(getFileIcon(fileName));
+        }
     }
 
     private renderNodeContent(node: TreeNode, depth: number) {
         const state = this.getNodeState(node);
-        const indent = depth * 16; // 16px per level
+        const indent = depth * 12;
+
+        const handleClick = (e: Event) => {
+            e.stopPropagation();
+            this.selectNode(node);
+            if (state.hasChildren) {
+                this.toggleExpanded(node);
+            }
+
+            if (!node.isDirectory) {
+                const path = node.getFullPathNormalized();
+                this.controller.setCurrentFileViaPath(path);
+            }
+        };
 
         return html`
             <div 
                 class="node ${state.isSelected ? 'selected' : ''}" 
                 style="padding-left: ${indent}px"
-                @click=${() => this.selectNode(node)}
+                @click=${handleClick}
             >
                 ${this.renderExpandIcon(node, state)}
-                ${this.renderNodeIcon(node)}
+                ${this.renderNodeIcon(node, state)}
                 <span class="node-label">${node.value}</span>
             </div>
         `;
@@ -150,28 +176,47 @@ export class FileExplorer extends LitElement {
 
     protected override render() {
         const tree = this.controller.getTree();
+        const isVisible = this.controller.getExplorerVisibility();
+
         if (!tree.root) {
-            return html`<div class="file-explorer">No files</div>`;
+            return html`
+                <div id="file-explorer" ?hidden=${!isVisible} class="no-files">
+                    No files
+                </div>
+            `
         }
 
         return html`
             <style>
-                .file-explorer {
-                    width: 15vw;
+                #file-explorer {
+                    width: 250px;
+                    min-width: 250px;
                     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                    font-size: 10px;
+                    font-size: 12px;
                     user-select: none;
                     background: #252526;
                     color: #cccccc;
                     border-right: 1px solid #3e3e42;
                     overflow-y: auto;
                     height: 100%;
+                    flex-shrink: 0;
+                }
+
+                #file-explorer[hidden] {
+                    display: none;
+                }
+
+                .no-files {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 1rem;
                 }
 
                 .node {
                     display: flex;
                     align-items: center;
-                    padding: 4px 8px;
+                    padding: 0 8px;
                     cursor: pointer;
                     white-space: nowrap;
                     line-height: 22px;
@@ -206,20 +251,13 @@ export class FileExplorer extends LitElement {
                 }
 
                 .node-label {
+                    margin-left: 0.5rem;
                     flex: 1;
                     overflow: hidden;
                     text-overflow: ellipsis;
                 }
-
-                .children {
-                    /* Children are rendered with increased depth padding */
-                }
-
-                .node-container {
-                    /* Container for each node and its children */
-                }
             </style>
-            <div class="file-explorer">
+            <div id="file-explorer" ?hidden=${!isVisible}>
                 ${this.renderNode(tree.root)}
             </div>
         `;
