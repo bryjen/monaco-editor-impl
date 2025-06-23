@@ -128,6 +128,18 @@ export class Toolbar extends LitElement {
             .toolbar-button:hover {
                 background: rgba(255, 255, 255, 0.1);
             }
+
+            .menu-item {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                font-size: var(--sl-font-size-small);
+            }
+
+            #toolbar-filler {
+                flex: 1;
+                border-bottom: 1px solid #3e3e42;
+            }
         `,
 
         // settings styling
@@ -170,6 +182,7 @@ export class Toolbar extends LitElement {
                 </div>
                 <div id="tabs-container">
                     ${files.map(file => this.renderTab(file, file.hash() === currentFileHash))}
+                    <div id="toolbar-filler"></div>
                 </div>
             </div>
         `
@@ -220,11 +233,9 @@ export class Toolbar extends LitElement {
 
         return html`
             <div @click=${toggleExplorer}>
-                <sl-tooltip class="shoelace-tooltip" content="Toggle file explorer" style="--show-delay: 0s">
-                    <div class="toolbar-button">
-                        ${createIcon(Copy)}
-                    </div>
-                </sl-tooltip>
+                <div class="toolbar-button">
+                    ${createIcon(Copy)}
+                </div>
             </div>
         `
     }
@@ -233,27 +244,15 @@ export class Toolbar extends LitElement {
         return html`
             <sl-dropdown>
                 <div slot="trigger">
-                    <sl-tooltip class="shoelace-tooltip" content="More actions" style="--show-delay: 0s">
-                        <div class="toolbar-button">
-                            ${createIcon(Ellipsis)}
-                        </div>
-                    </sl-tooltip>
+                    <div class="toolbar-button">
+                        ${createIcon(Ellipsis)}
+                    </div>
                 </div>
                 <sl-menu>
-                    <sl-menu-item>Dropdown Item 1</sl-menu-item>
-                    <sl-menu-item>Dropdown Item 2</sl-menu-item>
-                    <sl-menu-item>Dropdown Item 3</sl-menu-item>
-                    <sl-divider></sl-divider>
-                    <sl-menu-item type="checkbox" checked>Checkbox</sl-menu-item>
-                    <sl-menu-item disabled>Disabled</sl-menu-item>
-                    <sl-divider></sl-divider>
                     <sl-menu-item>
-                    Prefix
-                    <sl-icon slot="prefix" name="gift"></sl-icon>
-                    </sl-menu-item>
-                    <sl-menu-item>
-                    Suffix Icon
-                    <sl-icon slot="suffix" name="heart"></sl-icon>
+                        <div class="menu-item">
+                            Close all tabs
+                        </div>
                     </sl-menu-item>
                 </sl-menu>
             </sl-dropdown>           
@@ -314,11 +313,9 @@ export class Toolbar extends LitElement {
             </sl-dialog>
 
             <div slot="trigger" @click=${showDialog}>
-                <sl-tooltip class="shoelace-tooltip" content="Settings" style="--show-delay: 0s">
-                    <div class="toolbar-button">
-                        ${createIcon(Settings)}
-                    </div>
-                </sl-tooltip>
+                <div class="toolbar-button">
+                    ${createIcon(Settings)}
+                </div>
             </div>
         `;
     }

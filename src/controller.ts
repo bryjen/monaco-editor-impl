@@ -1,5 +1,5 @@
 import type { ReactiveController, ReactiveControllerHost } from "lit";
-import { filePathsToTree, type Tree } from "./file-explorer/tree";
+import { filePathsToTree, getAllLeafNodes, TreeNode, type Tree } from "./file-explorer/tree";
 import { normalizePath, parsePath } from "./utils/path";
 
 // lit reactive controller: https://lit.dev/docs/composition/controllers/
@@ -37,8 +37,6 @@ export class CodeJobResult {
 }
 
 export class CodeEditorController implements ReactiveController {
-    private static instance: CodeEditorController;
-
     private hosts = new Set<ReactiveControllerHost>();
     private _tree: Tree = null!;
 
@@ -83,8 +81,43 @@ export class CodeEditorController implements ReactiveController {
     }
 
 
-    getTree() : Tree {
+    // Tree stuff:
+
+    getTree(): Tree {
         return this._tree;
+    }
+
+    deleteNode(node: TreeNode): void {
+        if (!node.parent) {
+            return;
+        }
+
+        const actualParent = this._tree.findNodeByHash(node.parent.hash());
+        if (!actualParent) {
+            return; 
+        }
+
+        const hash = node.hash();
+        actualParent.children = actualParent.children.filter(child => child.hash() != hash);
+
+        this.pruneFiles(true);
+        this.notifyAll();
+    }
+
+    newNode(parentHash: string, newNode: TreeNode): void {
+        const actualParent = this._tree.findNodeByHash(parentHash);
+        if (!actualParent) {
+            return;
+        }
+
+        newNode.parent = actualParent;
+        actualParent.children.push(newNode);
+        if (!newNode.isDirectory) {  // if file, need to add to state, notify all called in child
+            const file = new File(newNode.getFullPathNormalized(), '');
+            this.addFile(file, true);
+        } else {
+            this.notifyAll();
+        }
     }
 
 
@@ -97,6 +130,10 @@ export class CodeEditorController implements ReactiveController {
     toggleExplorer() {
         this._explorerVisible = !this._explorerVisible;
         this.notifyAll();
+    }
+
+    getFiles() : Map<string, File> {
+        return this._files;
     }
 
     /**
@@ -148,12 +185,15 @@ export class CodeEditorController implements ReactiveController {
         this.notifyAll();
     }
 
-    closeFile(fileHash: string) {
+    private removeFromOpenFiles(fileHash: string) {
         const newOpenFiles: string[] = []
         this._openFiles.forEach((hash, idx) => {
             if (hash === this._currentFile && hash === fileHash) {
                 const selectorOffset = idx > 0 ? -1 : 1;
-                this._currentFile = this._openFiles[idx + selectorOffset]!;
+                const newIdx = idx + selectorOffset;
+                this._currentFile = newIdx >= 0 && newIdx < this._openFiles.length 
+                    ? (this._openFiles[newIdx] ?? null) 
+                    : null;
             }
 
             if (fileHash !== hash) {
@@ -162,7 +202,48 @@ export class CodeEditorController implements ReactiveController {
         })
 
         this._openFiles = this._openFiles.filter(hash => hash !== fileHash);
+    }
+
+    closeFile(fileHash: string) {
+        this.removeFromOpenFiles(fileHash);
         this.notifyAll();
+    }
+
+    removeFileViaPath(filePath: string, notify: boolean = true) {
+        const file = this._files.values().find(file => file.path === filePath) ?? null;
+        if (!file) {
+            if (notify) this.notifyAll();
+            return;
+        }
+
+        const hash = file.hash();
+        const _ = this._files.delete(hash);
+        this.removeFromOpenFiles(hash);
+        if (notify) this.notifyAll();
+    }
+
+    addFile(file: File, setCurrent: boolean = false) {
+        this._files.set(file.hash(), file);
+        if (setCurrent) {
+            this.setCurrentFile(file.hash());  // notify all called in child method
+        } else {
+            this.notifyAll();
+        }
+    }
+
+    pruneFiles(notify: boolean = true): void {
+        const nodePaths = new Set(
+            getAllLeafNodes(this._tree.root)
+                .map(node => node.getFullPathNormalized()));
+
+        for (const [hash, file] of this._files) {
+            const path = normalizePath(file.path);
+            if (!nodePaths.has(path)) {
+                this.removeFileViaPath(path, false)
+            }
+        }
+
+        if (notify) this.notifyAll();
     }
 
 

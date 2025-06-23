@@ -16,6 +16,21 @@ export function filePathsToTree(filePaths: string[]) {
     return tree;
 }
 
+export function getAllLeafNodes(root: TreeNode): TreeNode[] {
+    const leafNodes: TreeNode[] = [];
+    
+    function traverse(node: TreeNode) {
+        if (node.children.length === 0) {
+            leafNodes.push(node);
+        } else {
+            node.children.forEach(child => traverse(child));
+        }
+    }
+    
+    traverse(root);
+    return leafNodes;
+}
+
 
 // for debugging only
 
@@ -35,6 +50,7 @@ export class TreeNode {
     children: TreeNode[] = [];
     parent?: TreeNode | null = null;
     isDirectory: boolean = true
+    expanded: boolean = true;
 
     constructor(value: string, children: TreeNode[], parent: TreeNode | null, isDirectory: boolean) {
         this.value = value;

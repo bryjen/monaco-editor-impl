@@ -82,14 +82,14 @@ namespace {
                     <sl-split-panel ${ref(splitPanelRef)} primary="start" position="100" vertical style="height: 100%; --min: 30px; --max: calc(100vh - 30px - 30px);">
                         <div
                             slot="start"
-                            style="height: 100%; background: var(--sl-color-neutral-50); display: flex; align-items: center; justify-content: center; overflow: hidden;"
+                            style="height: 100%; background: #1e1e1e; display: flex; align-items: center; justify-content: center; overflow: hidden;"
                             >
                                 <monaco-editor .controller=${this._controller} style="width: 100%; height: 100%">
                                 </monaco-editor>
                         </div>
                         <div
                             slot="end"
-                            style="height: 100%; background: var(--sl-color-neutral-50); display: flex; align-items: center; justify-content: center; overflow: hidden;"
+                            style="height: 100%; background: #1e1e1e; display: flex; align-items: center; justify-content: center; overflow: hidden;"
                             >
                                 <test-runner .splitPanelRef=${splitPanelRef} style="height: 100%; width: 100%"></test-runner>
                         </div>

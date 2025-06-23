@@ -7,6 +7,7 @@ import * as monaco from 'monaco-editor/esm/vs/editor/editor.main.js';
 import { initVimMode } from 'monaco-vim';
 import type { CodeEditorController, File } from "../controller";
 import { registerProviders } from "./providers";
+import { editor } from "monaco-editor";
 
 // for intellisense
 declare global {
@@ -70,6 +71,28 @@ export class Editor extends LitElement {
         }
     }
 
+    /**
+     * Essentially cleans dangling editor models and saves existing contents to the corresponding 
+     * files in the controller.
+     */
+    public syncModelsToController() {
+        const allFiles = this.controller.getFiles();
+        const fileKeys = new Set(allFiles.keys());
+
+        for (const [key, model] of this._models) {
+            if (!fileKeys.has(key)) {
+                // if model has no corresponding file, delete it
+                this._models.delete(key);
+            } else {
+                // if model, has corresponding file, save contents
+                const file = allFiles.get(key)
+                if (file) {
+                    file.contents = model.getValue();
+                }
+            }
+        }
+    }
+
 
     // we disable the shadow DOM for monaco
     protected override createRenderRoot() {
@@ -77,15 +100,22 @@ export class Editor extends LitElement {
     }
 
     protected override render(): TemplateResult {
+        const openFilesState = this.controller.getOpenFiles();
+        const hideEditor = openFilesState.currentFileHash === null;
+
         return html`
             <style>
                 #monaco-editor-container {
                     height: 100%;
-                    // background: var(--editor-bg, white);
                     background: #1e1e1e;
                 }
+
+                .hidden {
+                    visibility: hidden;
+                }
             </style>
-            <div id="monaco-editor-container"></div>
+            <div id="monaco-editor-container" class=${hideEditor ? 'hidden' : ''}>
+            </div>
         `
     }
 
@@ -149,7 +179,9 @@ export class Editor extends LitElement {
 
     protected override update(changedProperties: PropertyValues) {
         super.update(changedProperties);
-        
+
+        this.syncModelsToController();
+
         // This runs on every reactive update cycle
         if (this._editor && this.controller) {
             const { files, currentFileHash } = this.controller.getOpenFiles();
