@@ -1,15 +1,12 @@
 
-import { css, html, LitElement, TemplateResult, type PropertyValues } from "lit";
+import { css, html, LitElement, type TemplateResult, type PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { ref, createRef, Ref } from 'lit/directives/ref.js';
+import { ref, createRef, type Ref } from 'lit/directives/ref.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
-import { repeat } from "lit/directives/repeat.js";
 
-import { type TreeNode } from "./tree";
+import { Tree, TreeNode } from "./tree";
 import { CodeEditorController } from "../controller";
 
-import { ChevronRight, ChevronDown } from 'lucide';
-import { createIcon, createIconWithDim } from '../utils/lucide.ts'
 import { parsePath } from "../utils/path.ts";
 import { getDirectoryIcon, getFileIcon } from "../utils/iconify.ts";
 
@@ -20,31 +17,24 @@ import '@shoelace-style/shoelace/dist/components/checkbox/checkbox.js';
 import '@shoelace-style/shoelace/dist/components/tooltip/tooltip.js';
 import '@shoelace-style/shoelace/dist/components/badge/badge.js';
 
-import { SlDropdown, SlTreeItem } from "@shoelace-style/shoelace";
+import { SlDropdown, SlInput, SlTreeItem } from "@shoelace-style/shoelace";
 
 // Uses shoelace's tree component to render the file system tree
 // (see: https://shoelace.style/components/tree)
 
+function generateGuid(): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
 @customElement("shoelace-file-explorer")
 export class ShoelaceFileExplorer extends LitElement {
-
-    static override styles = [
-        css`
-        `
-    ]
-
-
     // @ts-ignore
     @property({attribute: false})
     controller!: CodeEditorController;
-
-    // @ts-ignore
-    @state()
-    private expandedNodes = new Set<TreeNode>();
-
-    // @ts-ignore
-    @state()
-    private selectedNode: TreeNode | null = null;
 
     private _initialized = false;
 
@@ -100,7 +90,111 @@ export class ShoelaceFileExplorer extends LitElement {
         }
     }
 
-    private renderNode(node: TreeNode): TemplateResult {
+    private handleDeleteFolder(node: TreeNode) {
+        const tree = this.controller.getTree();
+        if (!node.parent) {
+            return;
+        }
+
+        const actualParent = tree.findNodeByHash(node.parent.hash());
+        if (!actualParent) {
+            return; 
+        }
+
+        const hash = node.hash();
+        actualParent.children = actualParent.children.filter(child => child.hash() != hash);
+        this.requestUpdate();
+    }
+
+    private handleNewFolder(tree: Tree, node: TreeNode) {
+        const nodeHash = node.hash();
+
+        // getting root
+        let currentNode: TreeNode = node;
+        while (currentNode.parent) {
+            currentNode = currentNode.parent
+        }
+
+        let tempTree = tree.clone();
+        const nodeClone = tempTree.findNodeByHash(nodeHash);
+        if (!nodeClone) {
+            return;
+        }
+
+        const tempNodeValue = generateGuid();
+        const placeholderNode = new TreeNode(tempNodeValue, [], nodeClone, true);
+        nodeClone.children.push(placeholderNode);
+
+        this._tempNodeValues.push(tempNodeValue);
+        this._tempTree = tempTree;
+        this.requestUpdate();
+    }
+
+    private renderInput(node: TreeNode): TemplateResult {
+        let slInput: SlInput | null = null;
+        let cancelled: boolean = false;
+
+        const handleRef = (el?: Element) => {
+            if (el) {
+                // Small delay to ensure element is fully initialized
+                setTimeout(() => {
+                    slInput = el as SlInput
+                    slInput.focus();
+                }, 0);
+            }
+        };
+
+        const onBlur = () => {
+            this._tempTree = null;
+
+            if (slInput && !cancelled) {
+                console.log("onBlur: ", slInput.value);
+
+                const tree = this.controller.getTree();
+                if (!node.parent) return;
+                const actualParent = tree.findNodeByHash(node.parent.hash());
+                if (!actualParent) return;
+                const newNode = new TreeNode(slInput.value, [], actualParent, node.isDirectory);
+                actualParent.children.push(newNode);
+            } else {
+                console.log("onBlur");
+            }
+
+            this.requestUpdate();
+        }
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (!slInput) {
+                return;
+            }
+
+            if (e.key === 'Enter') {
+                slInput.blur();
+                e.preventDefault();
+            }
+            else if (e.key === 'Escape') {
+                cancelled = true;
+                slInput.blur();
+            }
+        };
+
+        return html`
+            <sl-tree-item>
+                <sl-input 
+                    ${ref(handleRef)} 
+                    @sl-blur=${onBlur} 
+                    @keydown=${handleKeyDown} 
+                    size="small">
+                </sl-input>
+            </sl-tree-item>
+        `;
+    }
+
+    private renderNode(tree: Tree, node: TreeNode): TemplateResult {
+        if (this._tempNodeValues.find(tmpVal => tmpVal === node.value)) {
+            return this.renderInput(node);
+        }
+
         const dropdownRef: Ref<SlDropdown> = createRef();
         const treeItemRef: Ref<SlTreeItem> = createRef();
 
@@ -116,7 +210,6 @@ export class ShoelaceFileExplorer extends LitElement {
 
         const dropdownOnClick = (e: MouseEvent) => {
             // triggered only when the user clicks the node label
-
             console.log('dropdownOnClick')
             e.preventDefault();
             e.stopPropagation();
@@ -146,7 +239,6 @@ export class ShoelaceFileExplorer extends LitElement {
 
         const tiHandle = (e: MouseEvent) => {
             // triggered only when the user clicks the space outside the node container
-
             console.log('tiHandle')
             if (!dropdownRef.value)
                 return;
@@ -156,17 +248,31 @@ export class ShoelaceFileExplorer extends LitElement {
                 e.stopPropagation();
                 this.closeAllDropDowns(dd);
                 dd.open = !dd.open;
-            } else {
+            } else if (treeItemRef.value) {
                 dd.hide();
 
                 // shoelace tree automatically switches the currently selected node in this case
-                // we signal without explicitly setting the currently selected
+                // we signal without explicitly setting the node
                 this.unselectAll();
+                treeItemRef.value.selected = true;
                 signalUpdatedFile();
             }
         }
 
-        const childrenTemplates = node.children.map(child => this.renderNode(child)) 
+        const menuContents = node.isDirectory 
+            ? html`
+                <sl-menu-item @mousedown=${() => this.handleNewFolder(tree, node)}>
+                    New Folder
+                </sl-menu-item>
+                <sl-menu-item @mousedown=${() => this.handleDeleteFolder(node)}>
+                    Delete
+                </sl-menu-item>
+            `
+            : html`
+                <sl-menu-item>Delete</sl-menu-item>
+            `
+
+        const childrenTemplates = node.children.map(child => this.renderNode(tree, child)) 
         return html`
             <sl-tree-item ${ref(treeItemRef)}>
                 <div style="flex: 1" @mousedown=${tiHandle} @contextmenu=${onContextMenu}>
@@ -181,9 +287,7 @@ export class ShoelaceFileExplorer extends LitElement {
                             </div>
                         </div>
                         <sl-menu>
-                            <sl-menu-item>Cut</sl-menu-item>
-                            <sl-menu-item>Copy</sl-menu-item>
-                            <sl-menu-item>Paste</sl-menu-item>
+                            ${menuContents}
                         </sl-menu>
                     </sl-dropdown>
                 </div>
@@ -211,8 +315,12 @@ export class ShoelaceFileExplorer extends LitElement {
         `
     }
 
+
+    private _tempNodeValues: string[] = [];
+    private _tempTree: Tree | null = null;
+
     protected override render() {
-        const tree = this.controller.getTree();
+        const tree = this._tempTree ?? this.controller.getTree();
         const isVisible = this.controller.getExplorerVisibility();
 
         const styles = css`
@@ -241,19 +349,20 @@ export class ShoelaceFileExplorer extends LitElement {
                 padding: 1rem;
             }
 
+            // properties for controlling shoelace tree items appearance
             sl-tree-item::part(base) {
+                color: white;
             }
             
             sl-tree-item::part(label) {
-                color: white;
+                // background-color: white !important;
+                // width: 100%;
                 flex: 1;
             }
             
-            sl-tree-item::part(expand-button) {
-            }
+            sl-tree-item::part(expand-button) {}
             
-            sl-tree-item::part(base):hover {
-            }
+            sl-tree-item::part(base):hover {}
 
 
             .node-label {
@@ -261,6 +370,8 @@ export class ShoelaceFileExplorer extends LitElement {
                 align-items: center;
                 font-size: 0.85rem;
             }
+
+            sl-tree-item::part(label) sl-input {}
         `
 
         if (!tree.root) {
@@ -279,7 +390,7 @@ export class ShoelaceFileExplorer extends LitElement {
             <div id="file-explorer" ?hidden=${!isVisible}>
                 ${this.renderExplorerHeader()}
                 <sl-tree selection="leaf" style="--indent-guide-width: 1px;">
-                    ${tree.root.children.map(node => this.renderNode(node))}
+                    ${tree.root.children.map(node => this.renderNode(tree, node))}
                 </sl-tree>
             </div>
         `;

@@ -2,6 +2,9 @@ import { html, LitElement, type TemplateResult } from "lit";
 import { customElement, state } from "lit/decorators.js";
 import { CodeEditorController, File } from "./controller";
 
+import '@shoelace-style/shoelace/dist/components/split-panel/split-panel.js';
+import type SlSplitPanel from "@shoelace-style/shoelace/dist/components/split-panel/split-panel.js";
+import { createRef, ref, type Ref } from "lit/directives/ref.js";
 
 @customElement("code-workspace")
 export class CodeWorkspace extends LitElement {
@@ -42,6 +45,8 @@ namespace {
     }
 
     protected override render(): TemplateResult {
+        const splitPanelRef: Ref<SlSplitPanel> = createRef();
+
         return html`
             <style>
                 #editor-container {
@@ -60,6 +65,8 @@ namespace {
                     display: flex;
                     flex-direction: column;
                     justify-content: space-between;
+
+                    background-color: #1e1e1e;
                 }
             </style>
             <div id="editor-container">
@@ -72,15 +79,29 @@ namespace {
                     <editor-toolbar .controller=${this._controller}>
                     </editor-toolbar>
 
+                    <sl-split-panel ${ref(splitPanelRef)} primary="start" position="100" vertical style="height: 100%; --min: 30px; --max: calc(100vh - 30px - 30px);">
+                        <div
+                            slot="start"
+                            style="height: 100%; background: var(--sl-color-neutral-50); display: flex; align-items: center; justify-content: center; overflow: hidden;"
+                            >
+                                <monaco-editor .controller=${this._controller} style="width: 100%; height: 100%">
+                                </monaco-editor>
+                        </div>
+                        <div
+                            slot="end"
+                            style="height: 100%; background: var(--sl-color-neutral-50); display: flex; align-items: center; justify-content: center; overflow: hidden;"
+                            >
+                                <test-runner .splitPanelRef=${splitPanelRef} style="height: 100%; width: 100%"></test-runner>
+                        </div>
+                    </sl-split-panel>
+                    
                     <!-- @ts-ignore -->
+                    <!--
                     <monaco-editor .controller=${this._controller} style="flex: 1">
                     </monaco-editor>
 
-                    <div>
-                        <p>
-                            FOOTER
-                        </p>
-                    </div>
+                    <test-runner style="height: 200px"></test-runner>
+                    -->
                 </div>
             </div>
         `

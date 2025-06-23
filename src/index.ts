@@ -14,8 +14,11 @@ document.body.classList.add('sl-theme-dark');
 
 export * from './code-workspace'
 export * from './controller'
-export * from './monaco-editor'
 export * from './toolbar'
+export * from './test-runner'
+
+export * from './editor/monaco-editor'
+
 export * from './file-explorer/file-explorer'
 export * from './file-explorer/shoelace-file-explorer'
 export * from './file-explorer/tree'

@@ -5,7 +5,8 @@ import { customElement, property } from "lit/decorators.js";
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.main.js'; 
 // @ts-ignore
 import { initVimMode } from 'monaco-vim';
-import type { CodeEditorController, File } from "./controller";
+import type { CodeEditorController, File } from "../controller";
+import { registerProviders } from "./providers";
 
 // for intellisense
 declare global {
@@ -80,7 +81,8 @@ export class Editor extends LitElement {
             <style>
                 #monaco-editor-container {
                     height: 100%;
-                    background: var(--editor-bg, white);
+                    // background: var(--editor-bg, white);
+                    background: #1e1e1e;
                 }
             </style>
             <div id="monaco-editor-container"></div>
@@ -125,12 +127,14 @@ export class Editor extends LitElement {
             }
         }
 
-
         setInterval(() => {
             if (this._editor) {
                 this._editor.layout();
             }
         }, 100);
+
+        // enable 'intellisense' and 'smart' completions
+        registerProviders();
 
         this._editor.onKeyDown((e: monaco.IKeyboardEvent) => {
             // console.log('Key pressed:', e.keyCode, e.code);

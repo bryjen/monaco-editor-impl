@@ -43,7 +43,11 @@ export class TreeNode {
         this.isDirectory = isDirectory;
     }
 
-    getFullPathNormalized() {
+    getFullPathNormalized(): string {
+        if (!this.parent) {
+            return this.value;
+        }
+
         let currentNode: TreeNode = this;
         let path: string[] = [ currentNode.value ]
         while (currentNode.parent) {
@@ -51,6 +55,23 @@ export class TreeNode {
             path.push(currentNode.value)
         }
         return normalizePath(path.reverse().join('/'))
+    }
+
+    hash(): string {
+        return this.getFullPathNormalized();
+    }
+
+    clone(): TreeNode {
+        const clonedNode = new TreeNode(this.value, [], null, this.isDirectory);
+        
+        // Clone children recursively
+        clonedNode.children = this.children.map(child => {
+            const clonedChild = child.clone();
+            clonedChild.parent = clonedNode;
+            return clonedChild;
+        });
+        
+        return clonedNode;
     }
 }
 
@@ -93,5 +114,36 @@ export class Tree {
         if (changed) {
             this.notifyChange()
         }
+    }
+
+    clone() {
+        let tree = new Tree();
+        tree.root = this.root.clone();
+        return tree;
+    }
+
+    findNodeByHash(hash: string): TreeNode | null {
+        if (!this.root) {
+            return null;
+        }
+
+        const searchNode = (node: TreeNode): TreeNode | null => {
+            console.log(node)
+            console.log(node.hash())
+            if (node.hash() === hash) {
+                return node;
+            }
+
+            for (const child of node.children) {
+                const found = searchNode(child);
+                if (found) {
+                    return found;
+                }
+            }
+
+            return null;
+        };
+
+        return searchNode(this.root);
     }
 }

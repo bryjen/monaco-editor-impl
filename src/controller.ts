@@ -25,6 +25,17 @@ export class File {
     }
 }
 
+export class TestCaseResult {
+    name: string = ""
+    passed: boolean = false
+    message: string = ""
+}
+
+export class CodeJobResult {
+    testCaseResults: TestCaseResult[] = []
+    duration: string = ''
+}
+
 export class CodeEditorController implements ReactiveController {
     private static instance: CodeEditorController;
 
