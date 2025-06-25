@@ -19,6 +19,7 @@
     "@iconify/utils": "^2.3.0",
     "@shoelace-style/shoelace": "^2.20.1",
     "chokidar": "^4.0.3",
+    "esbuild": "^0.25.5",
     "lit": "^3.3.0",
     "lucide": "^0.522.0",
     "monaco-editor": "^0.52.2",

@@ -2,7 +2,7 @@ import esbuild from 'esbuild';
 import path from 'path';
 import chokidar from 'chokidar';
 
-import { readdirSync, rmSync, cpSync } from 'fs';
+import { readdirSync, rmSync, cpSync, existsSync, mkdirSync } from 'fs';
 
 
 const isWatch = process.argv.includes('--watch');
@@ -10,10 +10,14 @@ const isWatch = process.argv.includes('--watch');
 
 async function buildProject() {
 
+	if (!existsSync('./out')) {
+		mkdirSync('./out', { recursive: true });
+	}
+
 	// clean files (but not directory itself)
 	const files = readdirSync('./out');
 	files.forEach(file => {
-	rmSync(`./out/${file}`, { recursive: true, force: true });
+		rmSync(`./out/${file}`, { recursive: true, force: true });
 	});
 
 	cpSync('./index.html', './out/index.html');  // copy index.html
