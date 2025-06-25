@@ -1,15 +1,3 @@
-# monaco-lit
+# monaco-editor-impl
 
-To install dependencies:
-
-```bash
-bun install
-```
-
-To run:
-
-```bash
-bun run index.ts
-```
-
-This project was created using `bun init` in bun v1.2.15. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+Sample minimal 'vscode-like` workspace implementation using [monaco](https://microsoft.github.io/monaco-editor/).
