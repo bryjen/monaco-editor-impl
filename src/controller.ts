@@ -46,6 +46,11 @@ export class CodeEditorController implements ReactiveController {
 
     private _explorerVisible: boolean = true;
 
+    loading: boolean = false;
+    codeJobResult: CodeJobResult | null = null;
+    executionOutput: string[] | null = null;
+
+    private _registeredCallbacks = new Map<string, (data: any) => void>();
 
     constructor(
             files: File[], 
@@ -74,9 +79,13 @@ export class CodeEditorController implements ReactiveController {
         this.hosts.delete(host);
     }
 
+    registerCallback(eventType: string, callback: (data: any) => void) {
+        this._registeredCallbacks.set(eventType, callback);
+    }
 
-    selectFile(path: string) {
-        // this._currentFile = path;
+    triggerCallback(eventType: string, data: any) {
+        const callback = this._registeredCallbacks.get(eventType);
+        callback?.(data);
         this.notifyAll();
     }
 
@@ -141,6 +150,7 @@ export class CodeEditorController implements ReactiveController {
      * Specifically useful for the editor itself.
      */
     getOpenFiles() : { files: File[], currentFileHash: string | null } {
+        // @ts-ignore
         const keys = this._files.keys().filter(hash => this._openFiles.includes(hash))
         const openFiles = keys
             .map(key => this._files.get(key))
@@ -158,6 +168,7 @@ export class CodeEditorController implements ReactiveController {
      * Useful for when a consumer doesn't have file objects but file paths instead (file paths contain hashes)
      */
     setCurrentFileViaPath(filePath: string) {
+        // @ts-ignore
         const file = this._files.values().find(file => file.path === filePath) ?? null;
         if (!file) {
             return;
@@ -210,6 +221,7 @@ export class CodeEditorController implements ReactiveController {
     }
 
     removeFileViaPath(filePath: string, notify: boolean = true) {
+        // @ts-ignore
         const file = this._files.values().find(file => file.path === filePath) ?? null;
         if (!file) {
             if (notify) this.notifyAll();
@@ -245,6 +257,86 @@ export class CodeEditorController implements ReactiveController {
 
         if (notify) this.notifyAll();
     }
+
+
+    // Test case stuff:
+
+    // DEBUG ONLY
+    private generateCodeJobResult(): CodeJobResult {
+        const additionTest = new TestCaseResult();
+        additionTest.name = "MathTest.Addition";
+        additionTest.passed = true;
+        additionTest.message = "";
+
+        const divisionTest = new TestCaseResult();
+        divisionTest.name = "MathTest.Division";
+        divisionTest.passed = false;
+        divisionTest.message = "Expected equality of these values:\n  divide(10, 2)\n    Which is: 6\n  5";
+
+        const codeJobResult = new CodeJobResult();
+        codeJobResult.testCaseResults = [additionTest, divisionTest];
+        codeJobResult.duration = "1 ms";
+        return codeJobResult;
+    }
+
+    // DEBUG ONLY
+    private async randomWait() {
+        await new Promise(resolve => 
+            setTimeout(resolve, Math.random() * 250 + 100)
+        );
+    }
+
+    // DEBUG ONLY
+    performSampleCodeExecution() {
+        this.loading = true;
+
+        void (async () => {
+            const blocks: string[] = [
+`[==========] Running 2 tests from 1 test suite.`,
+`[----------] Global test environment set-up.`,
+`[----------] 2 tests from MathTest`,
+`[ RUN      ] MathTest.Addition
+[       OK ] MathTest.Addition (0 ms)`,
+`[ RUN      ] MathTest.Division
+math_test.cpp:15: Failure
+Expected equality of these values:
+  divide(10, 2)
+    Which is: 6
+  5
+[  FAILED  ] MathTest.Division (1 ms)`,
+`[----------] 2 tests from MathTest (1 ms total)
+
+[----------] Global test environment tear-down
+[==========] 2 tests from 1 test suite ran. (1 ms total)
+[  PASSED  ] 1 test.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] MathTest.Division
+
+ 1 FAILED TEST
+`
+            ];
+
+            for (const block of blocks) {
+                await this.randomWait();
+                console.log(block);
+                this.addToExecutionOutput(block);
+            }
+
+            this.codeJobResult = this.generateCodeJobResult();
+            this.loading = false;
+            this.notifyAll();
+        })();
+    }
+
+    addToExecutionOutput(msg: string) {
+        if (!this.executionOutput) {
+            this.executionOutput = [];
+        }
+
+        this.executionOutput.push(msg);
+        this.notifyAll();
+    }
+
 
 
 

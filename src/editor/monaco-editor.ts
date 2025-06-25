@@ -11,11 +11,12 @@ import { editor } from "monaco-editor";
 
 // for intellisense
 declare global {
-  interface Window {
-    MonacoEnvironment?: {
-      getWorkerUrl: (moduleId: string, label: string) => string;
-    };
-  }
+    interface Window {
+        // @ts-ignore
+        MonacoEnvironment?: {
+            getWorkerUrl: (moduleId: string, label: string) => string;
+        };
+    }
 }
 
 // declare global worker
@@ -171,6 +172,9 @@ export class Editor extends LitElement {
             if (e.ctrlKey && e.keyCode === monaco.KeyCode.Enter) {
                 e.preventDefault();
                 console.log('Ctrl+Enter - Run code request');
+
+                this.controller.performSampleCodeExecution();
+                this.controller.triggerCallback("onCodeExecutionRequest", {});
             }
         });
 
